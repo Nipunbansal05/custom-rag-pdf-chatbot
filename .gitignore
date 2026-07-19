@@ -1,0 +1,24 @@
+# Python virtual environment
+backend/venv/
+
+# Python cache
+__pycache__/
+*.pyc
+
+# Uploaded files
+backend/uploads/
+
+# Chroma database
+backend/db/
+
+# Frontend dependencies
+frontend/node_modules/
+
+# Vite build output
+frontend/dist/
+
+# VS Code settings
+.vscode/
+
+# Environment variables
+.env
