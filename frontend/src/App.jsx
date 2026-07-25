@@ -46,9 +46,14 @@ function App() {
 
  function handleFileChange(e) {
   const file = e.target.files[0];
-  setFile(file);
-}
 
+  if (file && file.type === "application/pdf") {
+    setSelectedFile(file);
+    setFileName(file.name);
+  } else {
+    alert("Please upload a PDF file only.");
+  }
+}
 
 function handleDrop(e) {
   e.preventDefault();
@@ -110,6 +115,8 @@ function handleDrop(e) {
       });
 
       const data = await response.json();
+
+      console.log("Backend Response:", data);
 
       const newMessage = {
         question,
@@ -362,90 +369,110 @@ function handleDrop(e) {
 
         <h2>💬 Chat</h2>
 
-        <div className="chat-container">
+<div className="chat-container">
 
-          {currentChat.messages.map((chat, index) => (
+  {currentChat.messages.map((chat, index) => (
 
-            <div key={index} className="chat-box">
-              <div className="user-message">
-                <strong>👤 You:</strong>
-                <p>{chat.question}</p>
-              </div>
+    <div key={index} className="chat-box">
 
-              <div className="ai-message">
-                <strong>🤖 AI:</strong>
-                <p>{chat.answer}</p>
+      <div className="user-message">
+        <strong>👤 You:</strong>
+        <p>{chat.question}</p>
+      </div>
 
-                <button
-                  onClick={() => {
-                    navigator.clipboard.writeText(chat.answer);
-                    alert("✅ Answer copied!");
-                  }}
-                  style={{
-                    marginTop: "10px",
-                    marginRight: "10px",
-                    padding: "6px 12px",
-                    cursor: "pointer",
-                  }}
-                >
-                  📋 Copy
-                </button>
+      <div className="ai-message">
+        <strong>🤖 AI:</strong>
 
-                <button
-                  onClick={() => handleRegenerate(chat.question)}
-                  disabled={loading}
-                  style={{
-                    marginTop: "10px",
-                    marginRight: "10px",
-                    padding: "6px 12px",
-                    cursor: "pointer",
-                  }}
-                >
-                  🔄 Regenerate
-                </button>
+        <p>
+          {typeof chat.answer === "string"
+            ? chat.answer
+            : JSON.stringify(chat.answer)}
+        </p>
 
-                <button
-                  onClick={() =>
-                    setShowSources((prev) => ({
-                      ...prev,
-                      [index]: !prev[index],
-                    }))
-                  }
-                  style={{
-                    marginTop: "10px",
-                    padding: "6px 12px",
-                    cursor: "pointer",
-                  }}
-                >
-                  {showSources[index]
-                    ? "🙈 Hide Source"
-                    : "📄 Show Source"}
-                </button>
+        <button
+          onClick={() => {
+            navigator.clipboard.writeText(chat.answer);
+            alert("✅ Answer copied!");
+          }}
+          style={{
+            marginTop: "10px",
+            marginRight: "10px",
+            padding: "6px 12px",
+            cursor: "pointer",
+          }}
+        >
+          📋 Copy
+        </button>
 
-                {showSources[index] &&
-                  chat.sources.map((source, i) => (
-                    <div
-                      key={i}
-                      style={{
-                        background: "#f4f4f4",
-                        padding: "10px",
-                        marginTop: "10px",
-                        borderRadius: "8px",
-                        fontSize: "14px",
-                      }}
-                    >
-                      {source}
-                    </div>
-                  ))}
-              </div>
+        <button
+          onClick={() => handleRegenerate(chat.question)}
+          disabled={loading}
+          style={{
+            marginTop: "10px",
+            marginRight: "10px",
+            padding: "6px 12px",
+            cursor: "pointer",
+          }}
+        >
+          🔄 Regenerate
+        </button>
+
+        <button
+          onClick={() =>
+            setShowSources((prev) => ({
+              ...prev,
+              [index]: !prev[index],
+            }))
+          }
+          style={{
+            marginTop: "10px",
+            padding: "6px 12px",
+            cursor: "pointer",
+          }}
+        >
+          {showSources[index]
+            ? "🙈 Hide Source"
+            : "📄 Show Source"}
+        </button>
+
+        {showSources[index] &&
+          chat.sources.map((source, i) => (
+            <div
+              key={i}
+              style={{
+                background: "#f4f4f4",
+                padding: "10px",
+                marginTop: "10px",
+                borderRadius: "8px",
+                fontSize: "14px",
+              }}
+            >
+              <strong>Source {i + 1}</strong>
+
+              <pre
+                style={{
+                  whiteSpace: "pre-wrap",
+                  marginTop: "8px",
+                  fontFamily: "inherit",
+                }}
+              >
+                {source}
+              </pre>
             </div>
           ))}
 
-          <div ref={chatEndRef}></div>
-        </div>
       </div>
+
     </div>
-  );
-}
+
+  ))}
+
+    <div ref={chatEndRef}></div>
+
+      </div>
+      </div>
+      </div>
+    );
+  }
 
 export default App;

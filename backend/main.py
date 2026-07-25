@@ -4,9 +4,16 @@ from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 from pypdf import PdfReader
 from langchain_text_splitters import RecursiveCharacterTextSplitter
-from langchain_ollama import OllamaEmbeddings, ChatOllama
+from langchain_google_genai import GoogleGenerativeAIEmbeddings
+from langchain_google_genai import ChatGoogleGenerativeAI
+from dotenv import load_dotenv 
 from langchain_chroma import Chroma
 import os
+import shutil
+
+load_dotenv()
+
+#print("GOOGLE_API_KEY:", os.getenv("GOOGLE_API_KEY"))
 
 app = FastAPI()
 
@@ -15,7 +22,7 @@ class QuestionRequest(BaseModel):
     question: str
 
 
-# Allow React frontend
+# Allow React frontendpip show google-genai
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
@@ -31,12 +38,14 @@ app.add_middleware(
 UPLOAD_FOLDER = "uploads"
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
-embedding_model = OllamaEmbeddings(
-    model="nomic-embed-text"
+embeddings = GoogleGenerativeAIEmbeddings(
+    model="gemini-embedding-001",
+    google_api_key=os.getenv("GOOGLE_API_KEY")
 )
 
-llm = ChatOllama(
-    model="llama3.2"
+llm = ChatGoogleGenerativeAI(
+    model="gemini-flash-latest",
+    google_api_key=os.getenv("GOOGLE_API_KEY")
 )
 
 
@@ -56,21 +65,44 @@ async def upload_pdf(file: UploadFile = File(...)):
     total_pages = len(reader.pages)
 
     text = ""
+
     for page in reader.pages:
-        text += page.extract_text() or ""
+        text += (page.extract_text() or "") + "\n"
 
     text_splitter = RecursiveCharacterTextSplitter(
-        chunk_size=500,
-        chunk_overlap=50
-    )
+    chunk_size=500,
+    chunk_overlap=50
+)
 
-    chunks = text_splitter.split_text(text)
+    chunks = []
+
+    for page_number, page in enumerate(reader.pages, start=1):
+        page_text = page.extract_text() or ""
+
+        page_chunks = text_splitter.split_text(page_text)
+
+        for chunk in page_chunks:
+            chunks.append({
+                "page": page_number,
+                "text": chunk
+            })
 
     print("Total Chunks:", len(chunks))
 
+    for i, chunk in enumerate(chunks):
+        print(f"\n====== Chunk {i+1} ======")
+        print(chunk)
+
+    if os.path.exists("db"):
+        try:
+            shutil.rmtree("db")
+        except PermissionError:
+            pass
+        
     Chroma.from_texts(
-        texts=chunks,
-        embedding=embedding_model,
+        texts=[chunk["text"] for chunk in chunks],
+        metadatas=[{"page": chunk["page"]} for chunk in chunks],
+        embedding=embeddings,
         persist_directory="db"
     )
 
@@ -89,36 +121,67 @@ async def ask_question(request: QuestionRequest):
 
     vector_store = Chroma(
         persist_directory="db",
-        embedding_function=embedding_model
+        embedding_function=embeddings
     )
 
     retriever = vector_store.as_retriever(
-        search_kwargs={"k": 1}
+        search_type="mmr",
+        search_kwargs={
+            "k": 4,
+            "fetch_k": 10
+        }
     )
 
     docs = retriever.invoke(request.question)
 
+    print("---------------")
+    for i, doc in enumerate(docs):
+        print(f"Chunk {i+1}:")
+        print(doc.page_content)
+        print("---------------")
 
     context = "\n\n".join([doc.page_content for doc in docs])
 
     prompt = f"""
-You are a helpful AI assistant.
+You are an AI assistant.
 
-Answer ONLY using the information provided below.
+Use ONLY the given context.
+
+Answer naturally and briefly.
+
+Do not write:
+"Based on the provided context..."
+
+Just give the answer directly.
 
 Context:
 {context}
 
 Question:
 {request.question}
-
-Answer:
 """
 
     response = llm.invoke(prompt)
 
+    print(type(response.content))
+    print(response.content)
+
+    answer = response.content
+
+    if isinstance(answer, list):
+        answer = ""
+
+        for item in response.content:
+            print(type(item))
+            print(item)
+
+            if hasattr(item, "text"):
+                answer += item.text
+            elif isinstance(item, dict):
+                answer += item.get("text", "")
+
     return {
         "question": request.question,
-        "answer": response.content,
+        "answer": answer,
         "sources": [doc.page_content for doc in docs]
     }
