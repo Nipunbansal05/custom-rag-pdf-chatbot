@@ -211,3 +211,39 @@ button {
   border-radius: 8px;
   cursor: pointer;
 }
+@media (max-width: 768px) {
+  .app {
+    flex-direction: column;
+  }
+
+  .sidebar {
+    width: 100%;
+    height: auto;
+  }
+
+  .container {
+    width: 100%;
+    padding: 15px;
+    box-sizing: border-box;
+  }
+
+  input[type="text"] {
+    width: 100%;
+    box-sizing: border-box;
+  }
+
+  .drop-area {
+    width: 100%;
+    box-sizing: border-box;
+  }
+
+  button {
+    width: 100%;
+    margin-top: 10px;
+  }
+
+  .chat-box {
+    width: 100%;
+    box-sizing: border-box;
+  }
+}

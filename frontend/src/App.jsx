@@ -12,33 +12,53 @@ function App() {
   const [showSources, setShowSources] = useState({});
   const [darkMode, setDarkMode] = useState(false);
 
-  const [chats, setChats] = useState([
-    {
-      id: 1,
-      title: "New Chat",
-      messages: [],
-    },
-  ]);
+  const [chats, setChats] = useState([]);
 
-  const [activeChat, setActiveChat] = useState(1);
+  const [activeChat, setActiveChat] = useState(null);
+
 
   const chatEndRef = useRef(null);
 
   useEffect(() => {
     const savedChats = localStorage.getItem("pdfChats");
 
+    console.log("Raw localStorage:", savedChats);
+
     if (savedChats) {
       const parsedChats = JSON.parse(savedChats);
+
+      console.log("Parsed Chats:", parsedChats);
 
       if (parsedChats.length > 0) {
         setChats(parsedChats);
         setActiveChat(parsedChats[0].id);
+      } else {
+        const newChat = {
+          id: Date.now(),
+          title: "New Chat",
+          messages: [],
+        };
+        setChats([newChat]);
+        setActiveChat(newChat.id);
       }
+    } else {
+      const newChat = {
+        id: Date.now(),
+        title: "New Chat",
+        messages: [],
+      };
+      setChats([newChat]);
+      setActiveChat(newChat.id);
     }
   }, []);
 
   useEffect(() => {
+    if (chats.length === 0) return;
+
+    console.log("Saving chats:", JSON.stringify(chats, null, 2));
+
     localStorage.setItem("pdfChats", JSON.stringify(chats));
+
     chatEndRef.current?.scrollIntoView({
       behavior: "smooth",
     });
@@ -123,9 +143,14 @@ function handleDrop(e) {
         answer: data.answer,
         sources: data.sources || [],
       };
+      console.log("New Message:", newMessage);
+      console.log("Active Chat:", activeChat);
+      
 
-      setChats((prevChats) =>
-        prevChats.map((chat) => {
+      setChats((prevChats) => {
+        console.log("Before update:", prevChats);
+
+        return prevChats.map((chat) => {
           if (chat.id !== activeChat) return chat;
 
           return {
@@ -136,8 +161,8 @@ function handleDrop(e) {
                 : chat.title,
             messages: [...chat.messages, newMessage],
           };
-        })
-      );
+        });
+      });
 
       setQuestion("");
     } catch (error) {
@@ -221,7 +246,7 @@ function handleDrop(e) {
 }
 
   const currentChat =
-    chats.find((chat) => chat.id === activeChat) || chats[0];
+  chats.find((chat) => chat.id === activeChat) || { messages: [] };
 
   return (
    <div className={darkMode ? "app dark" : "app"}>
@@ -370,6 +395,15 @@ function handleDrop(e) {
         <h2>💬 Chat</h2>
 
 <div className="chat-container">
+
+  {loading && (
+  <div className="chat-box">
+    <div className="ai-message">
+      <strong>🤖 AI:</strong>
+      <p>Thinking...</p>
+    </div>
+  </div>
+)}
 
   {currentChat.messages.map((chat, index) => (
 

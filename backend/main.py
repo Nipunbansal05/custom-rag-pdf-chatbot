@@ -87,11 +87,11 @@ async def upload_pdf(file: UploadFile = File(...)):
                 "text": chunk
             })
 
-    print("Total Chunks:", len(chunks))
+    # print("Total Chunks:", len(chunks))
 
-    for i, chunk in enumerate(chunks):
-        print(f"\n====== Chunk {i+1} ======")
-        print(chunk)
+    # for i, chunk in enumerate(chunks):
+    #     print(f"\n====== Chunk {i+1} ======")
+    #     print(chunk)
 
     if os.path.exists("db"):
         try:
@@ -134,11 +134,11 @@ async def ask_question(request: QuestionRequest):
 
     docs = retriever.invoke(request.question)
 
-    print("---------------")
-    for i, doc in enumerate(docs):
-        print(f"Chunk {i+1}:")
-        print(doc.page_content)
-        print("---------------")
+    # print("---------------")
+    # for i, doc in enumerate(docs):
+    #     print(f"Chunk {i+1}:")
+    #     print(doc.page_content)
+    #     print("---------------")
 
     context = "\n\n".join([doc.page_content for doc in docs])
 
@@ -160,20 +160,26 @@ Context:
 Question:
 {request.question}
 """
+    import time
+
+    start = time.time()
 
     response = llm.invoke(prompt)
 
-    print(type(response.content))
-    print(response.content)
+    end = time.time()
+
+    print("LLM Response Time:", round(end - start, 2), "seconds")
+
+    # print(type(response.content))
+    # print(response.content)
 
     answer = response.content
 
     if isinstance(answer, list):
         answer = ""
-
         for item in response.content:
-            print(type(item))
-            print(item)
+            # print(type(item))
+            # print(item)
 
             if hasattr(item, "text"):
                 answer += item.text
