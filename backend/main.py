@@ -10,6 +10,7 @@ from dotenv import load_dotenv
 from langchain_chroma import Chroma
 import os
 import shutil
+vector_store = None
 
 load_dotenv()
 
@@ -99,13 +100,16 @@ async def upload_pdf(file: UploadFile = File(...)):
             shutil.rmtree("db")
         except PermissionError:
             pass
+
+        global vector_store
         
-    Chroma.from_texts(
-        texts=[chunk["text"] for chunk in chunks],
-        metadatas=[{"page": chunk["page"]} for chunk in chunks],
-        embedding=embeddings,
-        persist_directory="db"
-    )
+        vector_store = Chroma.from_texts(
+            texts=[chunk["text"] for chunk in chunks],
+            metadatas=[{"page": chunk["page"]} for chunk in chunks],
+            embedding=embeddings
+        )
+
+    vector_store = vector_store
 
     print("Embeddings stored successfully!")
 
@@ -120,10 +124,10 @@ async def upload_pdf(file: UploadFile = File(...)):
 @app.post("/ask")
 async def ask_question(request: QuestionRequest):
 
-    vector_store = Chroma(
-        persist_directory="db",
-        embedding_function=embeddings
-    )
+    global vector_store
+
+    if vector_store is None:
+        return {"answer": "Please upload a PDF first."}
 
     retriever = vector_store.as_retriever(
         search_type="mmr",
