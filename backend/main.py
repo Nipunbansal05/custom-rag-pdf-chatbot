@@ -29,6 +29,7 @@ app.add_middleware(
         "http://localhost:5173",
         "http://localhost:5174",
         "http://localhost:5175",
+        "https://custom-rag-pdf-chatbot.vercel.app",
     ],
     allow_credentials=True,
     allow_methods=["*"],
