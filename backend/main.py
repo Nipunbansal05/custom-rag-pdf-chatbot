@@ -111,8 +111,11 @@ async def upload_pdf(file: UploadFile = File(...)):
        texts=[chunk["text"] for chunk in chunks],
        metadatas=[{"page": chunk["page"]} for chunk in chunks],
        embedding=embeddings,
-       persist_directory="db",
+       persist_directory="/tmp/db"
+       
     )
+
+    globals()["vector_store"] = vector_store
 
     print("vector_store after upload:", vector_store)
 
