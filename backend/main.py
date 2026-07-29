@@ -59,6 +59,12 @@ def home():
 
 @app.post("/upload")
 async def upload_pdf(file: UploadFile = File(...)):
+    global vector_store
+    print("Uploading:", file.filename)
+
+    vector_store = None
+    print("Old vector store cleared.")
+
     file_path = os.path.join(UPLOAD_FOLDER, file.filename)
 
     with open(file_path, "wb") as f:
@@ -96,7 +102,7 @@ async def upload_pdf(file: UploadFile = File(...)):
     #     print(f"\n====== Chunk {i+1} ======")
     #     print(chunk)
 
-    global vector_store
+    
 
     if os.path.exists("db"):
        shutil.rmtree("db", ignore_errors=True)
