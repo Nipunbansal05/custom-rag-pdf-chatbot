@@ -11,6 +11,7 @@ from langchain_chroma import Chroma
 import os
 import shutil
 vector_store = None
+print("vector_store at startup:", vector_store)
 
 load_dotenv()
 
@@ -95,21 +96,19 @@ async def upload_pdf(file: UploadFile = File(...)):
     #     print(f"\n====== Chunk {i+1} ======")
     #     print(chunk)
 
+    global vector_store
+
     if os.path.exists("db"):
-        try:
-            shutil.rmtree("db")
-        except PermissionError:
-            pass
+       shutil.rmtree("db", ignore_errors=True)
 
-        global vector_store
-        
-        vector_store = Chroma.from_texts(
-            texts=[chunk["text"] for chunk in chunks],
-            metadatas=[{"page": chunk["page"]} for chunk in chunks],
-            embedding=embeddings
-        )
+    vector_store = Chroma.from_texts(
+       texts=[chunk["text"] for chunk in chunks],
+       metadatas=[{"page": chunk["page"]} for chunk in chunks],
+       embedding=embeddings,
+       persist_directory="db",
+    )
 
-    vector_store = vector_store
+    print("vector_store after upload:", vector_store)
 
     print("Embeddings stored successfully!")
 
