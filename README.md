@@ -41,6 +41,17 @@ https://custom-rag-pdf-chatbot.vercel.app
 Backend:
 https://custom-rag-pdf-chatbot.onrender.com
 
+## Screenshots
+
+### Home Page
+![Home Page](Screenshot%20(222).png)
+
+### PDF Uploaded
+![PDF Uploaded](Screenshot%20(223).png)
+
+### AI Response
+![AI Response](Screenshot%20(224).png)
+
 ## How It Works
 
 1. User uploads a PDF.
